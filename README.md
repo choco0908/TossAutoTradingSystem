@@ -6,3 +6,14 @@ project/
 ├── credentials  
 ├── toss_client.py      # REST API 공통 클래스  
 └── examples.py         # 예제
+
+
+## 사용 예제
+```py
+from toss_client import TossInvestClient
+client = TossInvestClient()
+
+# 계좌 정보 조회
+accounts = client.get("/v1/accounts")
+print(accounts)
+```
