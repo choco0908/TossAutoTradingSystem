@@ -28,11 +28,8 @@ from config import (
 )
 from endpoints import Endpoint
 from exceptions import AuthenticationException
-#from .market_calendar import CalendarAPI
-#from .indicator import IndicatorAPI
-#from .market import MarketAPI
-#from .ranking import RankingAPI
-#from .stock import StockAPI
+from order import OrderAPI
+from order_id import OrderIdGenerator
 
 class TossClient:
     """
@@ -41,6 +38,12 @@ class TossClient:
     Example
     -------
     >>> client = TossClient()
+
+    >>> client = TossClient(
+        order_id_generator=OrderIdGenerator(
+            prefix="QQQ"
+        )
+    )
     """
 
     ######################################################################
@@ -50,6 +53,7 @@ class TossClient:
     def __init__(
         self,
         base_url: str = BASE_URL,
+        order_id_generator: OrderIdGenerator | None = None,
     ) -> None:
         self.base_url = base_url
         self.logger = self._create_logger()
@@ -62,6 +66,11 @@ class TossClient:
         # API Registry
 
         self.account = AccountAPI(self)
+        self.order_id = (
+                order_id_generator
+                or OrderIdGenerator()
+        )
+        self.order = OrderAPI(self)
         #self.market = MarketAPI(self)
         #self.stock = StockAPI(self)
         #self.calendar = CalendarAPI(self)

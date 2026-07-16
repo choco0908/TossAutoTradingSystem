@@ -56,13 +56,8 @@ class OrderType(StrEnum):
 # ----------------------------------------------------------------------
 
 class OrderStatus(StrEnum):
-    PENDING = "PENDING"
-    ACCEPTED = "ACCEPTED"
-    PARTIALLY_FILLED = "PARTIALLY_FILLED"
-    FILLED = "FILLED"
-    CANCELLED = "CANCELLED"
-    REJECTED = "REJECTED"
-    EXPIRED = "EXPIRED"
+    OPEN = "OPEN"
+    CLOSED = "CLOSED"
 
 # ----------------------------------------------------------------------
 # Conditional Order
@@ -130,8 +125,7 @@ class SortOrder(StrEnum):
 
 class TimeInForce(StrEnum):
     DAY = "DAY"
-    IOC = "IOC"
-    FOK = "FOK"
+    CLS = "CLS"
 
 # ----------------------------------------------------------------------
 # API Environment
