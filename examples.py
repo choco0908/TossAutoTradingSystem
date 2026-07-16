@@ -1,5 +1,5 @@
 """
-examples/account_example.py
+examples/examples.py
 """
 
 from client import TossClient
