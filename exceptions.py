@@ -10,28 +10,27 @@ from typing import Any, Optional
 
 
 class TossInvestException(Exception):
-    """
-    Base exception for TossInvest SDK.
-    """
 
     def __init__(
             self,
-            message: str = "",
             *,
-            status_code: Optional[int] = None,
-            response: Any = None,
-    ) -> None:
+            request_id=None,
+            code=None,
+            message=None,
+            data=None,
+    ):
+        self.request_id = request_id
+        self.code = code
+        self.message = message
+        self.data = data or {}
+
         super().__init__(message)
 
-        self.message = message
-        self.status_code = status_code
-        self.response = response
-
-    def __str__(self) -> str:
-        if self.status_code is not None:
-            return f"[{self.status_code}] {self.message}"
-
-        return self.message
+    def __str__(self):
+        return (
+            f"[{self.code}] "
+            f"{self.message}"
+        )
 
 
 # ----------------------------------------------------------------------
@@ -61,13 +60,7 @@ class InvalidCredentialException(AuthenticationException):
 # Authorization
 # ----------------------------------------------------------------------
 
-class AuthorizationException(TossInvestException):
-    """
-    Permission denied.
-    """
-
-
-class AccountRequiredException(AuthorizationException):
+class AccountRequiredException(TossInvestException):
     """
     accountSeq is required.
     """
@@ -80,12 +73,20 @@ class AccountRequiredException(AuthorizationException):
 class BadRequestException(TossInvestException):
     """
     HTTP 400
+    잘못된 요청. 필수 파라미터 누락
     """
 
 
-class ValidationException(BadRequestException):
+class AuthorizationException(TossInvestException):
     """
-    Invalid request parameters.
+    HTTP 401
+    인증 실패
+    """
+
+
+class PermissionException(TossInvestException):
+    """
+    HTTP 403
     """
 
 
@@ -98,12 +99,21 @@ class NotFoundException(TossInvestException):
 class ConflictException(TossInvestException):
     """
     HTTP 409
+    중복 요청
+    """
+
+
+class BusinessException(TossInvestException):
+    """
+    HTTP 422
+    비즈니스 규칙 위반
     """
 
 
 class RateLimitException(TossInvestException):
     """
     HTTP 429
+    요청 한도 초과
     """
 
 
@@ -114,6 +124,7 @@ class RateLimitException(TossInvestException):
 class InternalServerException(TossInvestException):
     """
     HTTP 500
+    주문 처리 중 일시적 오류 또는 시스템 점검
     """
 
 
@@ -189,34 +200,10 @@ class ConditionalOrderException(OrderException):
     """
 
 
-# ----------------------------------------------------------------------
-# Factory
-# ----------------------------------------------------------------------
-
-def raise_for_status(
-        status_code: int,
-        message: str = "",
-        response: Any = None,
-) -> None:
+class TimeoutException(Exception):
     """
-    Raise an appropriate exception from an HTTP status code.
+    Raised when a timeout occurs while waiting for a condition.
     """
 
-    mapping = {
-        400: BadRequestException,
-        401: AuthenticationException,
-        403: AuthorizationException,
-        404: NotFoundException,
-        409: ConflictException,
-        429: RateLimitException,
-        500: InternalServerException,
-        503: ServiceUnavailableException,
-    }
-
-    exc = mapping.get(status_code, TossInvestException)
-
-    raise exc(
-        message or f"HTTP {status_code}",
-        status_code=status_code,
-        response=response,
-    )
+    def __init__(self, message: str = "Operation timed out."):
+        super().__init__(message)

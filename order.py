@@ -172,19 +172,22 @@ class OrderAPI(BaseAPI):
     def _build_modify_body(
             self,
             *,
+            order_type: str,
             quantity: Optional[Number] = None,
             price: Optional[Number] = None,
     ) -> dict[str, Any]:
         """
         정정 Request Body 생성
         """
+        body: dict[str, Any] = {}
+
+        body["orderType"] = order_type
 
         if quantity is None and price is None:
             raise ValueError(
                 "Either quantity or price must be provided."
             )
 
-        body: dict[str, Any] = {}
 
         if quantity is not None:
 
@@ -234,7 +237,9 @@ class OrderAPI(BaseAPI):
         """
 
         return self.post(
-            f"{Endpoint.ORDERS}/{order_id}/modify",
+            Endpoint.ORDER_MODIFICATION.format(
+                orderId=order_id
+            ),
             body=body,
             require_account=True,
         )
@@ -248,7 +253,9 @@ class OrderAPI(BaseAPI):
         """
 
         return self.post(
-            f"{Endpoint.ORDERS}/{order_id}/cancel",
+            Endpoint.ORDER_CANCEL.format(
+                orderId=order_id
+            ),
             body={},
             require_account=True,
         )
@@ -440,6 +447,63 @@ class OrderAPI(BaseAPI):
             confirm_high_value_order=confirm_high_value_order,
         )
 
+    def buy_amount_at_open(
+            self,
+            symbol: str,
+            amount: Number,
+            target_price = None,
+            *,
+            session: str = "regularMarket",
+            poll_interval: float = 30,
+            refresh_interval: float = 1800,
+            timeout: Optional[float] = None,
+            client_order_id: Optional[str] = None,
+            confirm_high_value_order: bool = False,
+    ) -> OrderResult:
+        """
+        미국 장이 열릴 때까지 대기한 뒤 금액 매수 주문을 실행합니다.
+
+        Parameters
+        ----------
+        session : str
+            대기할 세션. 기본값은 정규장(regularMarket).
+
+        poll_interval : float
+            장 운영 정보를 다시 조회하는 주기(초).
+            대기 상태를 로그로 남기는 주기(초). API 재조회 주기는
+            refresh_interval을 참고하세요.
+
+            refresh_interval : float
+            장 운영 정보를 실제로 다시 조회(재검증)하는 주기(초).
+            기본값 1800초(30분).
+
+        timeout : float, optional
+            최대 대기 시간(초). None이면 장이 열릴 때까지 무기한 대기합니다.
+        """
+
+        self.client.calendar.wait_until_us_open(
+            session=session,
+            poll_interval=poll_interval,
+            refresh_interval=refresh_interval,
+            timeout=timeout,
+        )
+
+        if target_price is not None:
+            return self.client.strategy.buy_amount_if_below(
+                symbol,
+                amount,
+                target_price,
+                interval=30,
+            )
+        else:
+            return self.buy_amount(
+                symbol,
+                amount,
+                client_order_id=client_order_id,
+                confirm_high_value_order=confirm_high_value_order,
+            )
+
+
     # ------------------------------------------------------------------
     # Sell Orders
     # ------------------------------------------------------------------
@@ -595,6 +659,7 @@ class OrderAPI(BaseAPI):
     def modify(
         self,
         order_id: str,
+        order_type: str,
         *,
         quantity: Optional[Number] = None,
         price: Optional[Number] = None,
@@ -603,10 +668,11 @@ class OrderAPI(BaseAPI):
         주문 정정
         """
 
-        if not order_id:
-            raise ValueError("order_id is required.")
+        if not order_id or not order_type:
+            raise ValueError("order_id and order_type are required.")
 
         body = self._build_modify_body(
+            order_type=order_type,
             quantity=quantity,
             price=price,
         )

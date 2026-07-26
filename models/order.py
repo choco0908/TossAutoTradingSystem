@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any
+from .base import BaseModel
 
 
 @dataclass(slots=True)
-class OrderResult:
+class OrderResult(BaseModel):
     """
     Order Result
 
@@ -81,7 +82,9 @@ class OrderResult:
         주문 취소
         """
 
-        return self.client.order.cancel(self.order_id)
+        new_order = self.client.order.cancel(self.order_id)
+        self.update(new_order)
+        return new_order
 
     def modify(
             self,
@@ -92,12 +95,14 @@ class OrderResult:
         """
         주문 정정
         """
-
-        return self.client.order.modify(
+        new_order = self.client.order.modify(
             self.order_id,
+            self.order_type,
             quantity=quantity,
             price=price,
         )
+        self.update(new_order)
+        return new_order
 
     def wait(
             self,
@@ -116,21 +121,15 @@ class OrderResult:
             interval=interval,
         )
 
-    def __getitem__(self, key):
-        return self.data[key]
-
-    def get(self, key, default=None):
-        return self.data.get(key, default)
-
-    def to_dict(self):
-        return dict(self.data)
-
     def __repr__(self):
         return (
             f"<OrderResult("
             f"symbol={self.data.get('symbol')!r}, "
             f"side={self.data.get('side')!r}, "
-            f"status={self.data.get('status')!r})>"
+            f"status={self.data.get('status')!r}, "
+            f"orderId={self.data.get('orderId')!r}, "
+            f"price={self.data.get('price')!r}, "
+            f"quantity={self.data.get('quantity')!r})>"
         )
 
 

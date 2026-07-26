@@ -27,9 +27,13 @@ from config import (
     RETRY_STATUS_CODES,
 )
 from endpoints import Endpoint
-from exceptions import AuthenticationException
+from exceptions import AuthenticationException, TossInvestException, RateLimitException, BusinessException, \
+    PermissionException, BadRequestException
 from order import OrderAPI
 from order_id import OrderIdGenerator
+from market_info import MarketInfo
+from market import MarketAPI
+from strategy import Strategy
 
 class TossClient:
     """
@@ -71,9 +75,10 @@ class TossClient:
                 or OrderIdGenerator()
         )
         self.order = OrderAPI(self)
-        #self.market = MarketAPI(self)
+        self.calendar = MarketInfo(self)
+        self.market = MarketAPI(self)
+        self.strategy = Strategy(self)
         #self.stock = StockAPI(self)
-        #self.calendar = CalendarAPI(self)
         #self.ranking = RankingAPI(self)
         #self.indicator = IndicatorAPI(self)
 
@@ -334,9 +339,63 @@ class TossClient:
         # Error
 
         if not response.ok:
-            raise AuthenticationException(
-                response.text
-            )
+            try:
+                payload = response.json()
+            except ValueError:
+                payload = {}
+            error = payload.get("error", {})
+            code = error.get("code")
+            message = error.get("message")
+            request_id = error.get("requestId")
+            data = error.get("data")
+
+            if response.status_code == 400:
+                raise BadRequestException(
+                    request_id=request_id,
+                    code=code,
+                    message=message,
+                    data=data,
+                )
+
+            elif response.status_code == 401:
+                raise AuthenticationException(
+                    request_id=request_id,
+                    code=code,
+                    message=message,
+                    data=data,
+                )
+
+            elif response.status_code == 403:
+                raise PermissionException(
+                    request_id=request_id,
+                    code=code,
+                    message=message,
+                    data=data,
+                )
+
+            elif response.status_code == 422:
+                raise BusinessException(
+                    request_id=request_id,
+                    code=code,
+                    message=message,
+                    data=data,
+                )
+
+            elif response.status_code == 429:
+                raise RateLimitException(
+                    request_id=request_id,
+                    code=code,
+                    message=message,
+                    data=data,
+                )
+
+            else:
+                raise TossInvestException(
+                    request_id=request_id,
+                    code=code,
+                    message=message,
+                    data=data,
+                )
         if (
             response.text is None
             or response.text == ""

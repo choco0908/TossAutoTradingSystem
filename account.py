@@ -6,10 +6,13 @@ Account API
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any, Dict, Optional
 
 from base import BaseAPI
 from endpoints import Endpoint
+from exceptions import TossInvestException
+from utils.printer import pprint
 
 
 class AccountAPI(BaseAPI):
@@ -97,6 +100,51 @@ class AccountAPI(BaseAPI):
         )
 
     # ------------------------------------------------------------------
+    # Convenience
+    # ------------------------------------------------------------------
+
+    def holding(
+            self,
+            symbol: str,
+    ) -> Dict[str, Any] | None:
+        """
+        특정 종목 보유 조회
+        """
+
+        try:
+            return self.holdings(symbol=symbol).get("result", {})
+        except TossInvestException as e:
+            print(e)
+            return None
+
+    def average_purchase_price(
+            self,
+            symbol: str,
+    ) -> Decimal | None:
+        """
+        보유 종목의 평균 매입 단가를 반환합니다.
+
+        Parameters
+        ----------
+        symbol : str
+            종목코드
+
+        Returns
+        -------
+        Decimal | None
+            평균 매입 단가.
+            보유하지 않은 종목이면 None을 반환합니다.
+        """
+
+        try:
+            holding = self.holding(symbol=symbol).get("items",[])[0]
+            pprint(holding)
+            return holding.get("averagePurchasePrice",0)
+        except TossInvestException as e:
+            print(e)
+            return None
+
+    # ------------------------------------------------------------------
     # Portfolio
     # ------------------------------------------------------------------
 
@@ -142,22 +190,6 @@ class AccountAPI(BaseAPI):
                 [],
             ),
         }
-
-    # ------------------------------------------------------------------
-    # Convenience
-    # ------------------------------------------------------------------
-
-    def holding(
-        self,
-        symbol: str,
-    ) -> Dict[str, Any]:
-        """
-        특정 종목 보유 조회
-        """
-
-        return self.holdings(
-            symbol=symbol,
-        )
 
     # ------------------------------------------------------------------
     # Account Sequence

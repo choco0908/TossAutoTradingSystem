@@ -13,6 +13,10 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from models.exchange_rate import ExchangeRateResult
+from models.korea_market import KoreaMarketResult
+from models.us_market import USMarketResult
+
 console = Console()
 
 
@@ -223,6 +227,99 @@ def print_orders(orders: List[Dict[str, Any]]) -> None:
 
     console.print(table)
 
+# ----------------------------------------------------------------------
+# Market Info
+# ----------------------------------------------------------------------
+
+
+def print_exchange_rate(exchange: ExchangeRateResult) -> None:
+    table = Table(
+        title="Exchange Rate",
+        show_header=True,
+        header_style="bold cyan",
+    )
+
+    table.add_column("Item", style="green", no_wrap=True)
+    table.add_column("Value", style="white")
+
+    table.add_row("Currency Pair", exchange.currency_pair)
+    table.add_row("Rate", str(exchange.rate))
+    table.add_row("Mid Rate", str(exchange.mid_rate))
+    table.add_row("Basis Point", str(exchange.basis_point))
+    table.add_row("Change", exchange.rate_change_type)
+    table.add_row("Valid From", exchange.valid_from)
+    table.add_row("Valid Until", exchange.valid_until)
+
+    console.print(table)
+
+def _add_session(table, name, session):
+    table.add_row(
+        name,
+        session.start_time,
+        session.end_time,
+        session.single_price_auction_start_time or "-",
+        session.single_price_auction_end_time or "-",
+    )
+
+
+def print_kr_market(market: KoreaMarketResult) -> None:
+    table = Table(
+        title=f"Korea Market ({market.today.date})",
+        header_style="bold cyan",
+    )
+
+    table.add_column("Session", style="green")
+    table.add_column("Start")
+    table.add_column("End")
+    table.add_column("Auction Start")
+    table.add_column("Auction End")
+
+    if market.today.pre_market is not None:
+        _add_session(table, "Pre Market", market.today.pre_market)
+    if market.today.regular_market is not None:
+        _add_session(table, "Regular", market.today.regular_market)
+    if market.today.after_market is not None:
+        _add_session(table, "After Market", market.today.after_market)
+
+    console.print(table)
+
+
+def print_us_market(market: USMarketResult) -> None:
+    table = Table(
+        title=f"US Market ({market.today.date})",
+        header_style="bold cyan",
+    )
+
+    table.add_column("Session", style="green")
+    table.add_column("Start")
+    table.add_column("End")
+
+    if market.today.day_market is not None:
+        table.add_row(
+            "Day Market",
+            market.today.day_market.start_time,
+            market.today.day_market.end_time,
+        )
+    if market.today.pre_market is not None:
+        table.add_row(
+            "Pre Market",
+            market.today.pre_market.start_time,
+            market.today.pre_market.end_time,
+        )
+    if market.today.regular_market is not None:
+        table.add_row(
+            "Regular",
+            market.today.regular_market.start_time,
+            market.today.regular_market.end_time,
+        )
+    if market.today.after_market is not None:
+        table.add_row(
+            "After Market",
+            market.today.after_market.start_time,
+            market.today.after_market.end_time,
+        )
+
+    console.print(table)
 
 # ----------------------------------------------------------------------
 # Rankings
