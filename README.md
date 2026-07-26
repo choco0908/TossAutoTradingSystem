@@ -74,13 +74,12 @@ pip install -r requirements.txt
 
 ## 🚀 빠른 시작 (Quick Start)
 
-### 1. 환경 변수 설정 (`.env`)
- 프로젝트 루트 디렉터리에 `.env` 파일을 생성하거나 `config.py`에 키를 입력합니다.
+### 1. credentials 생성
+ 프로젝트 루트 디렉터리에 `credentials` 파일을 생성한 다음 아래 값을 입력하세요.
 
-```env
-TOSS_API_KEY=your_api_key_here
-TOSS_SECRET_KEY=your_secret_key_here
-TOSS_ACCOUNT_NO=your_account_number
+```
+client_id:tsck_live_xxxx
+client_secret:tssk_live_xxxxx
 ```
 
 ---
